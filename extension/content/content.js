@@ -57,7 +57,7 @@ const LOG_PREFIX = '[Ollama Translate]';
       return;
     }
 
-    const prompt = userPrompt || '将以下内容翻译为中文';
+    const prompt = userPrompt || 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.';
     const translatedNodes = [];
 
     for (const { node, text } of textNodes) {
@@ -98,7 +98,7 @@ const LOG_PREFIX = '[Ollama Translate]';
     }
 
     const model = settings?.model || 'qwen3:8b';
-    const systemPrompt = settings?.prompt || '将以下内容翻译为中文，保留原文格式，只返回翻译结果';
+    const systemPrompt = settings?.prompt || 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.';
 
     const promises = [];
     for (const xpath of domainRules.xpaths) {

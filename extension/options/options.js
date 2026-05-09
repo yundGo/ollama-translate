@@ -1,6 +1,6 @@
 const DEFAULTS = {
   model: 'qwen3:8b',
-  prompt: '将以下内容翻译为中文，保留原文格式，只返回翻译结果'
+  prompt: 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.'
 };
 
 async function loadSettings() {
