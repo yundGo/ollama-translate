@@ -57,16 +57,15 @@ const LOG_PREFIX = '[Ollama Translate]';
       return;
     }
 
-    const prompt = userPrompt || 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.';
     const translatedNodes = [];
 
     for (const { node, text } of textNodes) {
       try {
         const response = await chrome.runtime.sendMessage({
           action: 'translate',
-          text: `${prompt}\n\n${text}`,
+          text,
           model,
-          prompt: ''
+          prompt: userPrompt
         });
         if (response?.translated) {
           translatedNodes.push({ node, translation: response.translated });
@@ -97,8 +96,8 @@ const LOG_PREFIX = '[Ollama Translate]';
       return;
     }
 
-    const model = settings?.model || 'qwen3:8b';
-    const systemPrompt = settings?.prompt || 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.';
+    const model = settings?.model;
+    const userPrompt = settings?.prompt;
 
     const promises = [];
     for (const xpath of domainRules.xpaths) {
@@ -114,7 +113,7 @@ const LOG_PREFIX = '[Ollama Translate]';
           continue;
         }
         el.dataset.ollamaTranslated = 'true';
-        promises.push(translateElement(el, model, systemPrompt));
+        promises.push(translateElement(el, model, userPrompt));
       }
     }
     console.log(LOG_PREFIX, 'total translation tasks:', promises.length);

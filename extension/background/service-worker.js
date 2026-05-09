@@ -1,5 +1,10 @@
 const LOG_PREFIX = '[Ollama Translate BG]';
 
+const DEFAULTS = {
+  model: 'qwen3:8b',
+  prompt: 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.'
+};
+
 const pendingRequests = new Map();
 
 function addPending(tabId, controller) {
@@ -59,6 +64,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then((models) => sendResponse({ models }))
       .catch((err) => sendResponse({ error: err.message }));
     return true;
+  } else if (message.action === 'getDefaults') {
+    sendResponse(DEFAULTS);
   }
 });
 
@@ -66,9 +73,9 @@ async function translateText(text, model, prompt, signal) {
   const url = 'http://localhost:11434/v1/chat/completions';
 
   const body = {
-    model: model || 'qwen3:8b',
+    model: model || DEFAULTS.model,
     messages: [
-      { role: 'system', content: prompt || 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.' },
+      { role: 'system', content: prompt || DEFAULTS.prompt },
       { role: 'user', content: text }
     ],
     stream: false

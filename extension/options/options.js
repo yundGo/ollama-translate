@@ -1,7 +1,13 @@
-const DEFAULTS = {
-  model: 'qwen3:8b',
-  prompt: 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.'
-};
+let DEFAULTS = { model: '', prompt: '' };
+
+async function loadDefaults() {
+  const resp = await chrome.runtime.sendMessage({ action: 'getDefaults' });
+  if (resp) DEFAULTS = resp;
+  document.getElementById('model').placeholder = DEFAULTS.model;
+  document.getElementById('defaultPrompt').textContent = DEFAULTS.prompt;
+  document.getElementById('prompt').placeholder = DEFAULTS.prompt;
+  document.getElementById('defaultModelHint').textContent = `本地已安装的 Ollama 模型名称。留空则使用 ${DEFAULTS.model}`;
+}
 
 async function loadSettings() {
   const { settings } = await chrome.storage.local.get('settings');
@@ -110,7 +116,8 @@ document.getElementById('btnSaveSettings').addEventListener('click', saveSetting
 document.getElementById('btnDetectModels').addEventListener('click', detectModels);
 document.getElementById('btnRestorePrompt').addEventListener('click', restorePrompt);
 document.getElementById('btnResetAll').addEventListener('click', resetAll);
-document.addEventListener('DOMContentLoaded', () => {
-  loadSettings();
-  renderRules();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadDefaults();
+  await loadSettings();
+  await renderRules();
 });

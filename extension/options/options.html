@@ -17,16 +17,16 @@
         <input type="text" id="model" placeholder="qwen3:8b" />
         <button id="btnDetectModels" class="btn btn-secondary btn-sm" style="margin-top:6px">检测本地模型</button>
         <div id="modelList" class="model-list"></div>
-        <span class="hint">本地已安装的 Ollama 模型名称。留空则使用 <code>qwen3:8b</code></span>
+        <span class="hint" id="defaultModelHint">本地已安装的 Ollama 模型名称。留空则使用默认值</span>
       </div>
       <div class="field">
         <label for="prompt">翻译提示词</label>
-        <textarea id="prompt" rows="4" placeholder="Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text."></textarea>
+        <textarea id="prompt" rows="4" placeholder="正在加载..."></textarea>
         <div class="field-actions">
           <button id="btnRestorePrompt" class="btn btn-text btn-sm">恢复默认提示词</button>
         </div>
         <span class="hint">发送给 Ollama 的提示词，翻译内容会附加在后面。留空使用：</span>
-        <div class="default-preview">Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.</div>
+        <div class="default-preview" id="defaultPrompt">正在加载...</div>
       </div>
       <div class="save-row">
         <button id="btnSaveSettings" class="btn btn-primary">保存设置</button>
