@@ -57,7 +57,7 @@ const LOG_PREFIX = '[Ollama Translate]';
       return;
     }
 
-    const translatedNodes = [];
+    const nodeMap = new Map();
 
     for (const { node, text } of textNodes) {
       try {
@@ -68,16 +68,40 @@ const LOG_PREFIX = '[Ollama Translate]';
           prompt: userPrompt
         });
         if (response?.translated) {
-          translatedNodes.push({ node, translation: response.translated });
+          nodeMap.set(node, { original: text, translation: response.translated });
         }
       } catch (err) {
         console.error(LOG_PREFIX, 'text node translation failed:', err.message);
       }
     }
 
-    for (const { node, translation } of translatedNodes) {
+    for (const [node, { translation }] of nodeMap) {
       node.textContent = translation;
     }
+
+    if (nodeMap.size) {
+      protectTranslation(element, nodeMap);
+    }
+  }
+
+  function protectTranslation(element, nodeMap) {
+    let retryCount = 0;
+    const maxRetries = 5;
+    const observer = new MutationObserver(() => {
+      let needsReapply = false;
+      for (const [node, { original, translation }] of nodeMap) {
+        if (node.textContent === original) {
+          node.textContent = translation;
+          needsReapply = true;
+        }
+      }
+      if (needsReapply) {
+        retryCount++;
+        if (retryCount >= maxRetries) observer.disconnect();
+      }
+    });
+    observer.observe(element, { childList: true, subtree: true, characterData: true });
+    setTimeout(() => observer.disconnect(), 15000);
   }
 
   async function translatePage() {
