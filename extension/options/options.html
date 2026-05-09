@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama Translate - 设置</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Ollama Translate 设置</h1>
+
+    <section>
+      <h2>Ollama 配置</h2>
+      <div class="field">
+        <label for="model">模型名称</label>
+        <input type="text" id="model" placeholder="qwen3:8b" />
+        <button id="btnDetectModels" class="btn btn-secondary btn-sm" style="margin-top:6px">检测本地模型</button>
+        <div id="modelList" class="model-list"></div>
+        <span class="hint">本地已安装的 Ollama 模型名称</span>
+      </div>
+      <div class="field">
+        <label for="prompt">翻译提示词</label>
+        <textarea id="prompt" rows="4" placeholder="将以下内容翻译为中文，保留原文格式，只返回翻译结果"></textarea>
+        <span class="hint">发送给 Ollama 的提示词，翻译内容会附加在后面</span>
+      </div>
+      <button id="btnSaveSettings" class="btn btn-primary">保存设置</button>
+      <span id="saveStatus" class="save-status"></span>
+    </section>
+
+    <section>
+      <h2>翻译规则管理</h2>
+      <p class="hint">所有已配置的域名和对应的 XPath 规则</p>
+      <div id="rulesContainer"></div>
+    </section>
+
+    <section class="about">
+      <h2>常见问题</h2>
+      <h3>Ollama 返回 403 Forbidden</h3>
+      <p>Ollama 新版默认阻止非本地来源请求。需要设置环境变量允许扩展访问：</p>
+      <pre>export OLLAMA_ORIGINS=*
+ollama serve</pre>
+      <p>或在 macOS 下编辑 <code>~/.zshrc</code> 添加：</p>
+      <pre>export OLLAMA_ORIGINS=*</pre>
+      <p>然后重启 Ollama。</p>
+
+      <h3>关于</h3>
+      <p>本扩展连接本地 Ollama 服务（http://localhost:11434）进行网页翻译。</p>
+      <p>确保 Ollama 已启动并在运行。</p>
+    </section>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>
