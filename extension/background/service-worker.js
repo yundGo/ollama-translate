@@ -65,17 +65,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function translateText(text, model, prompt, signal) {
   const url = 'http://localhost:11434/v1/chat/completions';
 
+  const body = {
+    model: model || 'qwen3:8b',
+    messages: [
+      { role: 'system', content: prompt || '将以下内容翻译为中文，保留原文格式，只返回翻译结果' },
+      { role: 'user', content: text }
+    ],
+    stream: false
+  };
+
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: model || 'qwen3:8b',
-      messages: [
-        { role: 'system', content: prompt || '将以下内容翻译为中文，保留原文格式，只返回翻译结果' },
-        { role: 'user', content: text }
-      ],
-      stream: false
-    }),
+    body: JSON.stringify(body),
     signal
   });
 

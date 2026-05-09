@@ -42,32 +42,42 @@ const LOG_PREFIX = '[Ollama Translate]';
     return result;
   }
 
-  async function translateElement(element, model, prompt) {
-    const rawText = element.innerText || element.textContent || '';
-    const text = rawText.trim();
-    console.log(LOG_PREFIX, 'translateElement, text length:', text.length, 'model:', model);
-    if (!text) {
-      console.warn(LOG_PREFIX, 'No text content in element');
+  async function translateElement(element, model, userPrompt) {
+    console.log(LOG_PREFIX, 'translateElement, model:', model);
+
+    const textNodes = [];
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent;
+      if (text.trim()) textNodes.push({ node: walker.currentNode, text });
+    }
+
+    if (!textNodes.length) {
+      console.warn(LOG_PREFIX, 'No text nodes found');
       return;
     }
 
-    try {
-      const response = await chrome.runtime.sendMessage({
-        action: 'translate',
-        text,
-        model,
-        prompt
-      });
-      if (response?.translated) {
-        console.log(LOG_PREFIX, 'Translation OK, length:', response.translated.length);
-        element.innerHTML = response.translated;
-      } else if (response?.error) {
-        console.error(LOG_PREFIX, 'Translation returned error:', response.error);
-      } else {
-        console.warn(LOG_PREFIX, 'Translation returned empty response:', response);
+    const prompt = userPrompt || '将以下内容翻译为中文';
+    const translatedNodes = [];
+
+    for (const { node, text } of textNodes) {
+      try {
+        const response = await chrome.runtime.sendMessage({
+          action: 'translate',
+          text: `${prompt}\n\n${text}`,
+          model,
+          prompt: ''
+        });
+        if (response?.translated) {
+          translatedNodes.push({ node, translation: response.translated });
+        }
+      } catch (err) {
+        console.error(LOG_PREFIX, 'text node translation failed:', err.message);
       }
-    } catch (err) {
-      console.error(LOG_PREFIX, 'Translation failed:', err.message, err.stack);
+    }
+
+    for (const { node, translation } of translatedNodes) {
+      node.textContent = translation;
     }
   }
 
