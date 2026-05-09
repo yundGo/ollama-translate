@@ -68,7 +68,7 @@ async function translateText(text, model, prompt, signal) {
   const body = {
     model: model || 'qwen3:8b',
     messages: [
-      { role: 'system', content: prompt || '将以下内容翻译为中文，保留原文格式，只返回翻译结果' },
+      { role: 'system', content: prompt || 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.' },
       { role: 'user', content: text }
     ],
     stream: false
