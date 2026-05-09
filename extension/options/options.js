@@ -1,3 +1,8 @@
+const DEFAULTS = {
+  model: 'qwen3:8b',
+  prompt: '将以下内容翻译为中文，保留原文格式，只返回翻译结果'
+};
+
 async function loadSettings() {
   const { settings } = await chrome.storage.local.get('settings');
   if (settings) {
@@ -10,11 +15,24 @@ async function saveSettings() {
   const model = document.getElementById('model').value.trim();
   const prompt = document.getElementById('prompt').value.trim();
   await chrome.storage.local.set({
-    settings: { model: model || 'qwen3:8b', prompt }
+    settings: { model: model || DEFAULTS.model, prompt }
   });
   const status = document.getElementById('saveStatus');
   status.textContent = '✓ 已保存';
   setTimeout(() => { status.textContent = ''; }, 2000);
+}
+
+function restorePrompt() {
+  document.getElementById('prompt').value = DEFAULTS.prompt;
+}
+
+function resetAll() {
+  document.getElementById('model').value = '';
+  document.getElementById('prompt').value = '';
+  chrome.storage.local.remove('settings', () => {
+    document.getElementById('saveStatus').textContent = '✓ 已恢复默认';
+    setTimeout(() => { document.getElementById('saveStatus').textContent = ''; }, 2000);
+  });
 }
 
 async function detectModels() {
@@ -90,6 +108,8 @@ function escapeHtml(str) {
 
 document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
 document.getElementById('btnDetectModels').addEventListener('click', detectModels);
+document.getElementById('btnRestorePrompt').addEventListener('click', restorePrompt);
+document.getElementById('btnResetAll').addEventListener('click', resetAll);
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   renderRules();
