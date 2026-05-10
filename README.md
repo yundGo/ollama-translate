@@ -9,6 +9,7 @@
 ## Features
 
 - **🔒 100% Local** — Connects to your local Ollama instance. No data ever leaves your machine.
+- **⏹️ Per-Site Toggle** — Enable or disable auto-translation for each website independently via the popup.
 - **🎯 Precise Translation Zones** — Configure XPath rules per domain to translate only the areas you care about.
 - **🚫 Exclusion Zones** — CSS selectors to skip code blocks, navigation bars, etc.
 - **🏗️ HTML Structure Preserved** — Only text nodes are replaced. Links, images, code highlighting stay intact.
