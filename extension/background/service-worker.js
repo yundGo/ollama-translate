@@ -81,7 +81,8 @@ async function translateText(text, model, prompt, endpoint, signal) {
       { role: 'system', content: prompt || DEFAULTS.prompt },
       { role: 'user', content: text }
     ],
-    stream: false
+    stream: false,
+    temperature: 0
   };
 
   const res = await fetch(url, {
@@ -97,7 +98,8 @@ async function translateText(text, model, prompt, endpoint, signal) {
   }
 
   const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  let content = data.choices?.[0]?.message?.content || '';
+  return content.trim();
 }
 
 async function listModels(endpoint) {
