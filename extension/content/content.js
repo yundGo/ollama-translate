@@ -44,6 +44,13 @@ const LOG_PREFIX = '[Ollama Translate]';
     return result;
   }
 
+  function isMostlyChinese(text) {
+    const cjk = text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g);
+    if (!cjk) return false;
+    const letters = text.replace(/\s/g, '').length;
+    return letters > 0 && cjk.length / letters > 0.5;
+  }
+
   function isExcluded(node, selectors) {
     if (!selectors?.length) return false;
     const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
@@ -80,10 +87,16 @@ const LOG_PREFIX = '[Ollama Translate]';
     const translations = [];
 
     for (let i = 0; i < texts.length; i++) {
+      const t = texts[i];
+      if (isMostlyChinese(t)) {
+        translations.push(t);
+        continue;
+      }
+
       try {
         const response = await chrome.runtime.sendMessage({
           action: 'translate',
-          text: texts[i],
+          text: t,
           model,
           prompt: userPrompt
         });
