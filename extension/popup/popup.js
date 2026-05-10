@@ -30,6 +30,7 @@ async function init() {
   await loadToggleState();
   await renderXPathList();
   await renderExcludeList();
+  checkOllamaStatus();
 
   document.getElementById('btnAdd').addEventListener('click', onAddXPath);
   document.getElementById('xpathInput').addEventListener('keydown', (e) => {
@@ -208,6 +209,25 @@ async function onTranslate() {
     alert('无法触发翻译，请刷新页面后重试。');
   }
   window.close();
+}
+
+async function checkOllamaStatus() {
+  const el = document.getElementById('statusOllama');
+  el.className = 'status status-loading';
+  el.textContent = '检查 Ollama 连接...';
+  try {
+    const resp = await chrome.runtime.sendMessage({ action: 'listModels' });
+    if (resp.error) {
+      el.className = 'status status-err';
+      el.textContent = '⚠️ Ollama 未运行';
+    } else {
+      el.className = 'status status-ok';
+      el.textContent = `✓ Ollama 运行中 (${resp.models.length} 个模型)`;
+    }
+  } catch {
+    el.className = 'status status-err';
+    el.textContent = '⚠️ Ollama 未运行';
+  }
 }
 
 function escapeHtml(str) {
