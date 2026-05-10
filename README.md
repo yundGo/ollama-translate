@@ -1,120 +1,111 @@
 # Ollama Translate
 
-> 浏览器扩展 — 使用本地 Ollama 模型翻译网页，数据不出本机，完全免费。
+> Browser extension — Translate web pages using local Ollama. Private, free, no data leaves your machine.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Chrome](https://img.shields.io/badge/Chrome-≥116-4285F4?logo=googlechrome&logoColor=white)](https://chrome.google.com)
 [![Edge](https://img.shields.io/badge/Edge-≥116-0078D7?logo=microsoftedge&logoColor=white)](https://microsoftedge.com)
 
-## 特点
+## Features
 
-- **🔒 本地处理** — 连接本地 Ollama，所有文本均在本地完成翻译，不上传任何数据到云端
-- **🎯 精准翻译区域** — 为每个域名配置 XPath，只翻译你关心的区域，不影响页面其他部分
-- **🚫 排除区域** — CSS 选择器排除代码块、导航栏等不需要翻译的元素
-- **🏗️ 保留 HTML 结构** — 只替换文本内容，链接、图片、代码高亮等标签完整保留
-- **🧠 SPA 兼容** — 自动检测页面路由变化，React/Vue 单页应用也可正常工作
-- **🖱️ 元素选取器** — 点击页面元素自动生成 XPath，无需手写
-- **🧩 自定义模型与提示词** — 使用你喜欢的任何 Ollama 模型，自由编写翻译提示词
-- **⏱️ 标签页关闭即取消** — 关闭页面时自动中断 Ollama 请求，不浪费算力
-- **💸 完全免费** — 本地运行，无 API 费用，无限使用
+- **🔒 100% Local** — Connects to your local Ollama instance. No data ever leaves your machine.
+- **🎯 Precise Translation Zones** — Configure XPath rules per domain to translate only the areas you care about.
+- **🚫 Exclusion Zones** — CSS selectors to skip code blocks, navigation bars, etc.
+- **🏗️ HTML Structure Preserved** — Only text nodes are replaced. Links, images, code highlighting stay intact.
+- **🧠 SPA Compatible** — Automatically detects route changes. Works with React, Vue, and other SPA frameworks.
+- **🖱️ Element Picker** — Click any element on the page to auto-generate its XPath — no manual typing needed.
+- **🧩 Custom Model & Prompt** — Use any Ollama model, write your own translation prompt.
+- **⏱️ Tab-Close Abort** — Closes the tab? Pending requests are cancelled instantly. No wasted compute.
+- **💸 Completely Free** — Runs locally. No API keys, no subscriptions, no limits.
 
-## 快速开始
+## Quick Start
 
-### 前提条件
+### Prerequisites
 
-1. 安装 [Ollama](https://ollama.com) 并启动
-2. 拉取一个翻译模型（如 `ollama pull qwen3:8b`）
+1. Install [Ollama](https://ollama.com) and start it
+2. Pull a model (e.g. `ollama pull qwen3:8b`)
 
-### 安装扩展
+### Install the Extension
 
-1. 下载此仓库到本地
-2. 打开浏览器扩展管理页面：
+1. Clone or download this repository
+2. Open your browser's extension management:
    - Chrome: `chrome://extensions`
    - Edge: `edge://extensions`
-3. 开启 **开发者模式**
-4. 点击 **加载已解压的扩展**，选择 `extension/` 目录
+3. Enable **Developer mode**
+4. Click **Load unpacked** and select the `extension/` directory
 
-### Ollama CORS 配置
+### Ollama CORS Configuration
 
-浏览器扩展需要 Ollama 允许跨域请求：
+Browser extensions need Ollama to allow cross-origin requests:
 
 ```bash
-# macOS 桌面版
+# macOS desktop app
 launchctl setenv OLLAMA_ORIGINS "*"
-# 重启 Ollama 应用
+# Then restart the Ollama app
 
-# 终端启动
+# Terminal launch
 export OLLAMA_ORIGINS=*
 ollama serve
 ```
 
-## 使用方法
+## Usage
 
-### 1. 配置翻译区域
+### 1. Configure Translation Zones
 
-打开任意网页 → 点击扩展图标 → 输入 XPath 或点击 **选取页面元素** → 添加
+Open any page → click the extension icon → enter an XPath or click **Pick Element** → add it.
 
-![popup](https://via.placeholder.com/360x400?text=Popup+Preview)
+### 2. Configure Exclusion Zones (optional)
 
-### 2. 配置排除区域（可选）
+Add CSS selectors in the popup's "Exclusion Zones" section to skip unwanted areas.
 
-在弹窗的"排除区域"中输入 CSS 选择器，代码块等内容将被跳过。
+Example exclusion selectors:
+- `.pub-pre-copy-container` — skip code blocks
+- `pre`, `code` — skip `<pre>` and `<code>` elements
+- `.sidebar`, `nav` — skip sidebars and navigation
 
-示例排除规则：
-- `.pub-pre-copy-container` — 排除代码块
-- `pre`, `code` — 排除 `<pre>` 和 `<code>` 元素
-- `.sidebar`, `nav` — 排除侧边栏和导航
+### 3. Customise Model & Prompt
 
-### 3. 自定义模型和提示词
+Right-click the extension icon → **Options** → set your model name and translation prompt.
 
-右键扩展图标 → **选项** → 设置模型名称和翻译提示词。
+Supports any Ollama model: `qwen3:8b`, `llama3.2`, `gemma3`, etc.
 
-支持所有 Ollama 模型：`qwen3:8b`、`llama3.2`、`gemma3` 等。
-
-## 数据流
+## Data Flow
 
 ```
-网页内容 → TreeWalker 提取文本节点 → 过滤排除区域
-    → 逐条发送到本地 Ollama API → 翻译结果
-    → 替换文本节点 → MutationObserver 保护翻译不被框架覆盖
+Page content → TreeWalker extracts text nodes → filter excluded zones
+    → send each text to local Ollama → receive translation
+    → replace text node → MutationObserver guards against framework re-renders
 ```
 
-## 扩展截图
-
-| 弹窗管理 | 设置页面 |
-|---------|---------|
-| 管理当前域名 XPath 和排除规则 | 配置模型、提示词、全局规则 |
-| *(截图待补充)* | *(截图待补充)* |
-
-## 开发
+## Development
 
 ```bash
 git clone https://github.com/yundGo/ollama-translate.git
 cd ollama-translate
-# 修改代码后，在 chrome://extensions 刷新扩展
+# Edit code, then refresh the extension at chrome://extensions
 ```
 
-调试日志：`chrome://extensions` → 点击扩展的 **Service Worker** 链接。
+Debug logs: `chrome://extensions` → click the extension's **Service Worker** link.
 
-## 项目结构
+## Project Structure
 
 ```
 extension/
-├── manifest.json              # MV3 配置
-├── content/content.js         # 页面脚本：XPath匹配、翻译替换、SPA支持
-├── background/service-worker.js  # Ollama API 通信、请求取消
-├── popup/popup.{html,css,js}  # 弹窗：XPath 和排除规则管理
-├── options/options.{html,css,js}  # 设置：模型、提示词、全局规则
-└── icons/                     # 扩展图标
+├── manifest.json              # MV3 config
+├── content/content.js         # Page script: XPath matching, translation, SPA support
+├── background/service-worker.js  # Ollama API calls, request abort
+├── popup/popup.{html,css,js}  # Popup: XPath and exclusion zone management
+├── options/options.{html,css,js}  # Settings: model, prompt, global rules
+└── icons/                     # Extension icons
 ```
 
-## 技术栈
+## Tech Stack
 
 - Manifest V3 (Chrome / Edge)
 - Ollama OpenAI-compatible API (`/v1/chat/completions`)
 - TreeWalker + MutationObserver
-- AbortController 请求取消
+- AbortController
 
-## 协议
+## License
 
 MIT
