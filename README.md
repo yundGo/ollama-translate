@@ -20,6 +20,7 @@
 - **⏱️ Tab-Close Abort** — Closes the tab? Pending requests are cancelled instantly. No wasted compute.
 - **💸 Completely Free** — Runs locally. No API keys, no subscriptions, no limits.
 - **🔌 Backend Agnostic** — Works with any OpenAI-compatible API: Ollama, LM Studio, llama.cpp, and more.
+- **🧠 Non-thinking Models Recommended** — Models without explicit reasoning output faster translations. Recommended: `qwen/qwen3-4b-2507`
 
 ## Quick Start
 
@@ -64,6 +65,8 @@ Example exclusion selectors:
 ### 3. Customise Model & Prompt
 
 Right-click the extension icon → **Options** → set your API endpoint, model name and translation prompt.
+
+Recommended model for fast translation: `qwen/qwen3-4b-2507` (no thinking/reasoning, fast output).
 
 ## Data Flow
 
