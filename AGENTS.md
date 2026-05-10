@@ -2,8 +2,10 @@
 
 ## ⚠️ 重要约束
 
-- **禁止自动提交 git** — 只有用户明确要求时才执行 git commit。
+- **禁止自动提交 git** — 只有用户明确要求时才执行 git commit，提交后自动推送。
+- **默认分支为 `main`**，非 `master`。
 - **禁止修改默认提示词** — DEFAULTS.prompt 的内容由用户自行维护，不要改动。
+- **README 双语言维护** — `README.md`（中文）和 `README.en.md`（英文）同步更新。
 
 Browser extension (Chrome/Edge MV3) that translates webpage regions using local Ollama, with per-domain XPath rule memory.
 
