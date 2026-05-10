@@ -12,6 +12,7 @@
 - **🎯 Precise Translation Zones** — Configure XPath rules per domain to translate only the areas you care about.
 - **🚫 Exclusion Zones** — CSS selectors to skip code blocks, navigation bars, etc.
 - **🏗️ HTML Structure Preserved** — Only text nodes are replaced. Links, images, code highlighting stay intact.
+- **🔄 Automatic Deduplication** — Overlapping XPath rules never cause duplicate translations. An element is translated once regardless of how many rules match it.
 - **🧠 SPA Compatible** — Automatically detects route changes. Works with React, Vue, and other SPA frameworks.
 - **🖱️ Element Picker** — Click any element on the page to auto-generate its XPath — no manual typing needed.
 - **🧩 Custom Model & Prompt** — Use any Ollama model, write your own translation prompt.
