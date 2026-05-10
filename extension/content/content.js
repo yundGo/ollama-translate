@@ -145,9 +145,9 @@ const LOG_PREFIX = '[Ollama Translate]';
     globalProtector.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
-  async function translatePage() {
+  async function translatePage(force) {
     const domain = window.location.hostname;
-    console.log(LOG_PREFIX, 'translatePage called for domain:', domain);
+    console.log(LOG_PREFIX, 'translatePage called for domain:', domain, 'force:', force);
 
     const { rules, settings } = await chrome.storage.local.get(['rules', 'settings']);
     console.log(LOG_PREFIX, 'storage rules:', JSON.stringify(rules));
@@ -160,7 +160,7 @@ const LOG_PREFIX = '[Ollama Translate]';
       console.log(LOG_PREFIX, 'No xpath rules for this domain, skip');
       return;
     }
-    if (domainRules.enabled === false) {
+    if (!force && domainRules.enabled === false) {
       console.log(LOG_PREFIX, 'auto-translate disabled for this domain, skip');
       return;
     }
@@ -265,7 +265,7 @@ const LOG_PREFIX = '[Ollama Translate]';
           delete el.dataset.ollamaTranslated;
         });
         translatedElements.clear();
-        translatePage().then(() => sendResponse({ done: true }));
+        translatePage(true).then(() => sendResponse({ done: true }));
         return true;
       case 'startPicker':
         startPicker();
