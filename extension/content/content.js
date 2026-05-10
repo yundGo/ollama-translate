@@ -160,6 +160,10 @@ const LOG_PREFIX = '[Ollama Translate]';
       console.log(LOG_PREFIX, 'No xpath rules for this domain, skip');
       return;
     }
+    if (domainRules.enabled === false) {
+      console.log(LOG_PREFIX, 'auto-translate disabled for this domain, skip');
+      return;
+    }
 
     const model = settings?.model;
     const userPrompt = settings?.prompt;
@@ -257,6 +261,10 @@ const LOG_PREFIX = '[Ollama Translate]';
         });
         break;
       case 'translate':
+        document.querySelectorAll('[data-ollama-translated]').forEach((el) => {
+          delete el.dataset.ollamaTranslated;
+        });
+        translatedElements.clear();
         translatePage().then(() => sendResponse({ done: true }));
         return true;
       case 'startPicker':
