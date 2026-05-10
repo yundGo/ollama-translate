@@ -21,14 +21,20 @@
         <span class="badge" id="xpathCount">0</span>
       </div>
       <div id="xpathList" class="xpath-list"></div>
-    </div>
-
-    <div class="section">
       <div class="add-row">
         <input type="text" id="xpathInput" placeholder="输入 XPath，如 /html/body/div[1]/main" />
         <button id="btnAdd" class="btn btn-primary">添加</button>
       </div>
       <button id="btnPick" class="btn btn-secondary">🎯 选取页面元素</button>
+    </div>
+
+    <div class="section">
+      <div class="section-title">排除区域 (CSS 选择器)</div>
+      <div id="excludeList" class="xpath-list"></div>
+      <div class="add-row">
+        <input type="text" id="excludeInput" placeholder="如 .pub-pre-copy-container, pre, code" />
+        <button id="btnAddExclude" class="btn btn-primary">添加</button>
+      </div>
     </div>
 
     <div class="actions">

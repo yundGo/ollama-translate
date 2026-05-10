@@ -5,6 +5,11 @@ async function getCurrentTab() {
   return tab;
 }
 
+function getDomainRules(rules) {
+  const r = rules?.[currentDomain];
+  return { xpaths: r?.xpaths || [], exclude: r?.exclude || [] };
+}
+
 async function init() {
   const tab = await getCurrentTab();
   if (!tab?.url) {
@@ -23,6 +28,7 @@ async function init() {
 
   await checkPendingPick(tab.id);
   await renderXPathList();
+  await renderExcludeList();
 
   document.getElementById('btnAdd').addEventListener('click', onAddXPath);
   document.getElementById('xpathInput').addEventListener('keydown', (e) => {
@@ -33,6 +39,10 @@ async function init() {
   document.getElementById('btnSettings').addEventListener('click', () => {
     chrome.runtime.openOptionsPage();
   });
+  document.getElementById('btnAddExclude').addEventListener('click', onAddExclude);
+  document.getElementById('excludeInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') onAddExclude();
+  });
 }
 
 async function checkPendingPick(tabId) {
@@ -41,7 +51,7 @@ async function checkPendingPick(tabId) {
 
   if (_pendingPick.domain === currentDomain) {
     const updated = { ...(rules || {}) };
-    if (!updated[currentDomain]) updated[currentDomain] = { xpaths: [] };
+    if (!updated[currentDomain]) updated[currentDomain] = { xpaths: [], exclude: [] };
     if (!updated[currentDomain].xpaths.includes(_pendingPick.xpath)) {
       updated[currentDomain].xpaths.push(_pendingPick.xpath);
     }
@@ -50,23 +60,35 @@ async function checkPendingPick(tabId) {
   await chrome.storage.local.remove('_pendingPick');
 }
 
+async function saveDomainRules(xpaths, exclude) {
+  const { rules } = await chrome.storage.local.get('rules');
+  const updated = { ...(rules || {}) };
+  const data = {};
+  if (xpaths.length) data.xpaths = xpaths;
+  if (exclude.length) data.exclude = exclude;
+  if (data.xpaths || data.exclude) {
+    updated[currentDomain] = data;
+  } else {
+    delete updated[currentDomain];
+  }
+  await chrome.storage.local.set({ rules: updated });
+}
+
 async function renderXPathList() {
   const { rules } = await chrome.storage.local.get('rules');
-  const domainRules = rules?.[currentDomain];
+  const { xpaths } = getDomainRules(rules);
   const list = document.getElementById('xpathList');
   const count = document.getElementById('xpathCount');
 
   list.innerHTML = '';
+  count.textContent = xpaths.length;
 
-  if (!domainRules?.xpaths?.length) {
+  if (!xpaths.length) {
     list.innerHTML = '<div class="empty-state">暂无 XPath 规则</div>';
-    count.textContent = '0';
     return;
   }
 
-  count.textContent = domainRules.xpaths.length;
-
-  domainRules.xpaths.forEach((xpath, i) => {
+  xpaths.forEach((xpath, i) => {
     const item = document.createElement('div');
     item.className = 'xpath-item';
     item.innerHTML = `
@@ -78,29 +100,70 @@ async function renderXPathList() {
   });
 }
 
+async function renderExcludeList() {
+  const { rules } = await chrome.storage.local.get('rules');
+  const { exclude } = getDomainRules(rules);
+  const list = document.getElementById('excludeList');
+
+  list.innerHTML = '';
+
+  if (!exclude.length) {
+    list.innerHTML = '<div class="empty-state">暂无排除规则</div>';
+    return;
+  }
+
+  exclude.forEach((sel, i) => {
+    const item = document.createElement('div');
+    item.className = 'xpath-item';
+    item.innerHTML = `
+      <span class="xpath-text">${escapeHtml(sel)}</span>
+      <button class="btn-remove" data-index="${i}" title="删除">✕</button>
+    `;
+    item.querySelector('.btn-remove').addEventListener('click', () => onRemoveExclude(i));
+    list.appendChild(item);
+  });
+}
+
 async function onAddXPath() {
   const input = document.getElementById('xpathInput');
   const xpath = input.value.trim();
   if (!xpath) return;
 
   const { rules } = await chrome.storage.local.get('rules');
-  const updated = { ...(rules || {}) };
-  if (!updated[currentDomain]) updated[currentDomain] = { xpaths: [] };
-  if (!updated[currentDomain].xpaths.includes(xpath)) {
-    updated[currentDomain].xpaths.push(xpath);
-  }
-  await chrome.storage.local.set({ rules: updated });
+  const { xpaths, exclude } = getDomainRules(rules);
+  if (!xpaths.includes(xpath)) xpaths.push(xpath);
+  await saveDomainRules(xpaths, exclude);
   input.value = '';
   await renderXPathList();
 }
 
 async function onRemoveXPath(index) {
   const { rules } = await chrome.storage.local.get('rules');
-  if (!rules?.[currentDomain]) return;
-  rules[currentDomain].xpaths.splice(index, 1);
-  if (rules[currentDomain].xpaths.length === 0) delete rules[currentDomain];
-  await chrome.storage.local.set({ rules });
+  const { xpaths, exclude } = getDomainRules(rules);
+  xpaths.splice(index, 1);
+  await saveDomainRules(xpaths, exclude);
   await renderXPathList();
+}
+
+async function onAddExclude() {
+  const input = document.getElementById('excludeInput');
+  const sel = input.value.trim();
+  if (!sel) return;
+
+  const { rules } = await chrome.storage.local.get('rules');
+  const { xpaths, exclude } = getDomainRules(rules);
+  if (!exclude.includes(sel)) exclude.push(sel);
+  await saveDomainRules(xpaths, exclude);
+  input.value = '';
+  await renderExcludeList();
+}
+
+async function onRemoveExclude(index) {
+  const { rules } = await chrome.storage.local.get('rules');
+  const { xpaths, exclude } = getDomainRules(rules);
+  exclude.splice(index, 1);
+  await saveDomainRules(xpaths, exclude);
+  await renderExcludeList();
 }
 
 async function onPickElement() {
