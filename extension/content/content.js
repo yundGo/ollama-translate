@@ -1,4 +1,4 @@
-const LOG_PREFIX = '[Ollama Translate]';
+const LOG_PREFIX = '[Local Translate]';
 
 (function () {
   'use strict';
@@ -69,7 +69,7 @@ const LOG_PREFIX = '[Ollama Translate]';
     }
   }
 
-  async function translateElement(element, model, userPrompt, exclude) {
+  async function translateElement(element, model, userPrompt, endpoint, exclude) {
     console.log(LOG_PREFIX, 'translateElement, model:', model);
 
     const texts = [];
@@ -98,7 +98,8 @@ const LOG_PREFIX = '[Ollama Translate]';
           action: 'translate',
           text: t,
           model,
-          prompt: userPrompt
+          prompt: userPrompt,
+          endpoint
         });
         if (response?.translated) {
           forEachTextNode(element, exclude, (node, idx) => {
@@ -167,6 +168,7 @@ const LOG_PREFIX = '[Ollama Translate]';
 
     const model = settings?.model;
     const userPrompt = settings?.prompt;
+    const endpoint = settings?.endpoint;
     const exclude = domainRules.exclude || [];
 
     const promises = [];
@@ -178,12 +180,12 @@ const LOG_PREFIX = '[Ollama Translate]';
         console.warn(LOG_PREFIX, 'xpath matched no elements:', xpath);
       }
       for (const el of elements) {
-        if (el.dataset.ollamaTranslated === 'true') {
+        if (el.dataset.ltTranslated === 'true') {
           console.log(LOG_PREFIX, 'element already translated, skip');
           continue;
         }
-        el.dataset.ollamaTranslated = 'true';
-        promises.push(translateElement(el, model, userPrompt, exclude));
+        el.dataset.ltTranslated = 'true';
+        promises.push(translateElement(el, model, userPrompt, endpoint, exclude));
       }
     }
     console.log(LOG_PREFIX, 'total translation tasks:', promises.length);
@@ -200,7 +202,7 @@ const LOG_PREFIX = '[Ollama Translate]';
     pickerActive = true;
 
     const overlay = document.createElement('div');
-    overlay.id = 'ollama-picker-overlay';
+    overlay.id = 'lt-picker-overlay';
     overlay.style.cssText =
       'position:fixed;pointer-events:none;z-index:2147483647;border:2px solid #4CAF50;background:rgba(76,175,80,0.1);display:none;transition:all 0.1s;';
     document.body.appendChild(overlay);
@@ -261,8 +263,8 @@ const LOG_PREFIX = '[Ollama Translate]';
         });
         break;
       case 'translate':
-        document.querySelectorAll('[data-ollama-translated]').forEach((el) => {
-          delete el.dataset.ollamaTranslated;
+        document.querySelectorAll('[data-lt-translated]').forEach((el) => {
+          delete el.dataset.ltTranslated;
         });
         translatedElements.clear();
         translatePage(true).then(() => sendResponse({ done: true }));

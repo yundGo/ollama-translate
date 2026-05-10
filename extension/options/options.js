@@ -1,27 +1,34 @@
-let DEFAULTS = { model: '', prompt: '' };
+let DEFAULTS = { model: '', endpoint: '', prompt: '' };
 
 async function loadDefaults() {
   const resp = await chrome.runtime.sendMessage({ action: 'getDefaults' });
   if (resp) DEFAULTS = resp;
   document.getElementById('model').placeholder = DEFAULTS.model;
+  document.getElementById('endpoint').placeholder = DEFAULTS.endpoint;
   document.getElementById('defaultPrompt').textContent = DEFAULTS.prompt;
   document.getElementById('prompt').placeholder = DEFAULTS.prompt;
-  document.getElementById('defaultModelHint').textContent = `本地已安装的 Ollama 模型名称。留空则使用 ${DEFAULTS.model}`;
+  document.getElementById('defaultModelHint').textContent = `留空则使用 ${DEFAULTS.model}`;
 }
 
 async function loadSettings() {
   const { settings } = await chrome.storage.local.get('settings');
   if (settings) {
+    document.getElementById('endpoint').value = settings.endpoint || '';
     document.getElementById('model').value = settings.model || '';
     document.getElementById('prompt').value = settings.prompt || '';
   }
 }
 
 async function saveSettings() {
+  const endpoint = document.getElementById('endpoint').value.trim();
   const model = document.getElementById('model').value.trim();
   const prompt = document.getElementById('prompt').value.trim();
   await chrome.storage.local.set({
-    settings: { model: model || DEFAULTS.model, prompt }
+    settings: {
+      endpoint: endpoint || DEFAULTS.endpoint,
+      model: model || DEFAULTS.model,
+      prompt
+    }
   });
   const status = document.getElementById('saveStatus');
   status.textContent = '✓ 已保存';
@@ -33,6 +40,7 @@ function restorePrompt() {
 }
 
 function resetAll() {
+  document.getElementById('endpoint').value = '';
   document.getElementById('model').value = '';
   document.getElementById('prompt').value = '';
   chrome.storage.local.remove('settings', () => {
@@ -45,9 +53,10 @@ async function detectModels() {
   const container = document.getElementById('modelList');
   container.innerHTML = '<span class="hint">检测中...</span>';
   try {
-    const response = await chrome.runtime.sendMessage({ action: 'listModels' });
+    const endpoint = document.getElementById('endpoint').value.trim() || DEFAULTS.endpoint;
+    const response = await chrome.runtime.sendMessage({ action: 'listModels', endpoint });
     if (response.error) {
-      container.innerHTML = `<span class="hint" style="color:#e53935">连接 Ollama 失败: ${response.error}</span>`;
+      container.innerHTML = `<span class="hint" style="color:#e53935">连接失败: ${response.error}</span>`;
       return;
     }
     if (!response.models?.length) {
@@ -55,7 +64,7 @@ async function detectModels() {
       return;
     }
     container.innerHTML = response.models
-      .map((m) => `<span class="model-tag" data-name="${escapeHtml(m.name)}">${escapeHtml(m.name)}</span>`)
+      .map((m) => `<span class="model-tag" data-name="${escapeHtml(m.id || m.name)}">${escapeHtml(m.id || m.name)}</span>`)
       .join('') + '<span class="hint" style="display:block;margin-top:6px">点击模型名自动填入</span>';
 
     container.querySelectorAll('.model-tag').forEach((tag) => {

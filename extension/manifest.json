@@ -1,10 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Ollama Translate",
+  "name": "Local Translate",
   "version": "1.0.0",
-  "description": "使用本地 Ollama 模型翻译网页指定区域，支持 XPath 规则记忆",
+  "description": "使用本地大模型翻译网页指定区域，支持 XPath 规则记忆",
   "permissions": ["storage"],
-  "host_permissions": ["<all_urls>", "http://localhost:11434/*"],
+  "host_permissions": ["<all_urls>", "http://localhost/*"],
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {

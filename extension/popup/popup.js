@@ -30,7 +30,7 @@ async function init() {
   await loadToggleState();
   await renderXPathList();
   await renderExcludeList();
-  checkOllamaStatus();
+  checkBackendStatus();
 
   document.getElementById('btnAdd').addEventListener('click', onAddXPath);
   document.getElementById('xpathInput').addEventListener('keydown', (e) => {
@@ -211,22 +211,24 @@ async function onTranslate() {
   window.close();
 }
 
-async function checkOllamaStatus() {
-  const el = document.getElementById('statusOllama');
+async function checkBackendStatus() {
+  const el = document.getElementById('statusBackend');
   el.className = 'status status-loading';
-  el.textContent = '检查 Ollama 连接...';
+  el.textContent = '检查后端连接...';
   try {
-    const resp = await chrome.runtime.sendMessage({ action: 'listModels' });
+    const { settings } = await chrome.storage.local.get('settings');
+    const endpoint = settings?.endpoint;
+    const resp = await chrome.runtime.sendMessage({ action: 'listModels', endpoint });
     if (resp.error) {
       el.className = 'status status-err';
-      el.textContent = '⚠️ Ollama 未运行';
+      el.textContent = '⚠️ 后端未响应';
     } else {
       el.className = 'status status-ok';
-      el.textContent = `✓ Ollama 运行中 (${resp.models.length} 个模型)`;
+      el.textContent = `✓ 已连接 (${resp.models.length} 个模型)`;
     }
   } catch {
     el.className = 'status status-err';
-    el.textContent = '⚠️ Ollama 未运行';
+    el.textContent = '⚠️ 后端未响应';
   }
 }
 
