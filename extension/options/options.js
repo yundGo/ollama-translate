@@ -81,24 +81,44 @@ async function renderRules() {
   let html = '';
   for (const [domain, data] of Object.entries(rules)) {
     html += `<div class="rule-domain">${escapeHtml(domain)}</div>`;
-    data.xpaths.forEach((xpath, i) => {
+    if (data.exclude?.length) {
+      html += `<div style="font-size:12px;color:#888;margin:2px 0 6px">排除: ${data.exclude.map(e => escapeHtml(e)).join(', ')}</div>`;
+    }
+    data.xpaths?.forEach((xpath, i) => {
       html += `
         <div class="rule-item">
           <span class="xpath-text">${escapeHtml(xpath)}</span>
-          <button class="btn-remove" data-domain="${escapeHtml(domain)}" data-index="${i}">✕</button>
+          <button class="btn-remove" data-domain="${escapeHtml(domain)}" data-type="xpath" data-index="${i}">✕</button>
         </div>`;
     });
+    if (data.exclude?.length) {
+      data.exclude.forEach((sel, i) => {
+        html += `
+          <div class="rule-item" style="border-left:3px solid #e53935">
+            <span class="xpath-text">🚫 ${escapeHtml(sel)}</span>
+            <button class="btn-remove" data-domain="${escapeHtml(domain)}" data-type="exclude" data-index="${i}">✕</button>
+          </div>`;
+      });
+    }
   }
   container.innerHTML = html;
 
   container.querySelectorAll('.btn-remove').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const domain = btn.dataset.domain;
+      const type = btn.dataset.type;
       const index = parseInt(btn.dataset.index, 10);
       const { rules: cur } = await chrome.storage.local.get('rules');
       if (cur?.[domain]) {
-        cur[domain].xpaths.splice(index, 1);
-        if (cur[domain].xpaths.length === 0) delete cur[domain];
+        if (type === 'exclude') {
+          cur[domain].exclude?.splice(index, 1);
+          if (cur[domain].exclude?.length === 0) delete cur[domain].exclude;
+        } else {
+          cur[domain].xpaths?.splice(index, 1);
+        }
+        if (!cur[domain].xpaths?.length && !cur[domain].exclude?.length) {
+          delete cur[domain];
+        }
         await chrome.storage.local.set({ rules: cur });
         await renderRules();
       }

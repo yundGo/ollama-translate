@@ -2,7 +2,7 @@ const LOG_PREFIX = '[Ollama Translate BG]';
 
 const DEFAULTS = {
   model: 'qwen3:8b',
-  prompt: 'Translate the following content into English, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.'
+  prompt: 'Translate the following content into Chinese, and only return the translated result.For content that should not be translated (such as proper nouns, code, etc.), keep the original text.'
 };
 
 const pendingRequests = new Map();

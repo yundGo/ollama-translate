@@ -3,6 +3,8 @@ const LOG_PREFIX = '[Ollama Translate]';
 (function () {
   'use strict';
 
+  const translatedElements = new Map();
+
   function getElementXPath(element) {
     if (element.id) return `//*[@id="${element.id}"]`;
     if (element === document.body) return '/html/body';
@@ -42,66 +44,92 @@ const LOG_PREFIX = '[Ollama Translate]';
     return result;
   }
 
-  async function translateElement(element, model, userPrompt) {
+  function isExcluded(node, selectors) {
+    if (!selectors?.length) return false;
+    const el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    if (!el) return false;
+    return selectors.some((sel) => el.closest(sel));
+  }
+
+  function forEachTextNode(element, exclude, fn) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+    let i = 0;
+    while (walker.nextNode()) {
+      if (!walker.currentNode.textContent.trim()) continue;
+      if (isExcluded(walker.currentNode, exclude)) continue;
+      fn(walker.currentNode, i);
+      i++;
+    }
+  }
+
+  async function translateElement(element, model, userPrompt, exclude) {
     console.log(LOG_PREFIX, 'translateElement, model:', model);
 
-    const textNodes = [];
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
-    while (walker.nextNode()) {
-      const text = walker.currentNode.textContent;
-      if (text.trim()) textNodes.push({ node: walker.currentNode, text });
-    }
+    const texts = [];
+    forEachTextNode(element, exclude, (node, i) => {
+      texts.push(node.textContent);
+    });
 
-    if (!textNodes.length) {
+    if (!texts.length) {
       console.warn(LOG_PREFIX, 'No text nodes found');
       return;
     }
 
-    const nodeMap = new Map();
+    console.log(LOG_PREFIX, 'text nodes to translate:', texts.length);
 
-    for (const { node, text } of textNodes) {
+    const translations = [];
+
+    for (let i = 0; i < texts.length; i++) {
       try {
         const response = await chrome.runtime.sendMessage({
           action: 'translate',
-          text,
+          text: texts[i],
           model,
           prompt: userPrompt
         });
         if (response?.translated) {
-          nodeMap.set(node, { original: text, translation: response.translated });
+          forEachTextNode(element, exclude, (node, idx) => {
+            if (idx === i && node.textContent !== response.translated) {
+              node.textContent = response.translated;
+            }
+          });
+          translations.push(response.translated);
+        } else {
+          translations.push(texts[i]);
         }
       } catch (err) {
         console.error(LOG_PREFIX, 'text node translation failed:', err.message);
+        translations.push(texts[i]);
       }
     }
 
-    for (const [node, { translation }] of nodeMap) {
-      node.textContent = translation;
-    }
-
-    if (nodeMap.size) {
-      protectTranslation(element, nodeMap);
-    }
+    translatedElements.set(element, { translations, exclude });
+    ensureGlobalProtector();
   }
 
-  function protectTranslation(element, nodeMap) {
-    let retryCount = 0;
-    const maxRetries = 5;
-    const observer = new MutationObserver(() => {
-      let needsReapply = false;
-      for (const [node, { original, translation }] of nodeMap) {
-        if (node.textContent === original) {
-          node.textContent = translation;
-          needsReapply = true;
-        }
-      }
-      if (needsReapply) {
-        retryCount++;
-        if (retryCount >= maxRetries) observer.disconnect();
+  function applyTranslations(element, data) {
+    if (!element.isConnected) return;
+    forEachTextNode(element, data.exclude, (node, i) => {
+      if (i < data.translations.length && node.textContent !== data.translations[i]) {
+        node.textContent = data.translations[i];
       }
     });
-    observer.observe(element, { childList: true, subtree: true, characterData: true });
-    setTimeout(() => observer.disconnect(), 15000);
+  }
+
+  let globalProtector = null;
+
+  function ensureGlobalProtector() {
+    if (globalProtector) return;
+    globalProtector = new MutationObserver(() => {
+      for (const [element, data] of translatedElements) {
+        if (!element.isConnected) {
+          translatedElements.delete(element);
+          continue;
+        }
+        applyTranslations(element, data);
+      }
+    });
+    globalProtector.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
   async function translatePage() {
@@ -122,6 +150,7 @@ const LOG_PREFIX = '[Ollama Translate]';
 
     const model = settings?.model;
     const userPrompt = settings?.prompt;
+    const exclude = domainRules.exclude || [];
 
     const promises = [];
     for (const xpath of domainRules.xpaths) {
@@ -137,7 +166,7 @@ const LOG_PREFIX = '[Ollama Translate]';
           continue;
         }
         el.dataset.ollamaTranslated = 'true';
-        promises.push(translateElement(el, model, userPrompt));
+        promises.push(translateElement(el, model, userPrompt, exclude));
       }
     }
     console.log(LOG_PREFIX, 'total translation tasks:', promises.length);
