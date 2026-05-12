@@ -81,7 +81,8 @@ async function translateText(text, model, prompt, endpoint, signal) {
       { role: 'system', content: prompt || DEFAULTS.prompt },
       { role: 'user', content: text }
     ],
-    stream: false,
+    max_tokens: 4096,
+    stream: true,
     temperature: 0
   };
 
@@ -97,8 +98,32 @@ async function translateText(text, model, prompt, endpoint, signal) {
     throw new Error(`API error ${res.status}: ${res.statusText}. ${errText}`);
   }
 
-  const data = await res.json();
-  let content = data.choices?.[0]?.message?.content || '';
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let content = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith('data: ')) continue;
+      const data = trimmed.slice(6);
+      if (data === '[DONE]') break;
+      try {
+        const chunk = JSON.parse(data);
+        const delta = chunk.choices?.[0]?.delta?.content || '';
+        content += delta;
+      } catch { }
+    }
+  }
+
   return content.trim();
 }
 

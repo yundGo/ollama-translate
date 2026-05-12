@@ -72,60 +72,58 @@ const LOG_PREFIX = '[Local Translate]';
   async function translateElement(element, model, userPrompt, endpoint, exclude) {
     console.log(LOG_PREFIX, 'translateElement, model:', model);
 
-    const texts = [];
+    const textNodes = [];
     forEachTextNode(element, exclude, (node, i) => {
-      texts.push(node.textContent);
+      textNodes.push({ node, text: node.textContent });
     });
 
-    if (!texts.length) {
+    if (!textNodes.length) {
       console.warn(LOG_PREFIX, 'No text nodes found');
       return;
     }
 
-    console.log(LOG_PREFIX, 'text nodes to translate:', texts.length);
-
-    const translations = [];
-
-    for (let i = 0; i < texts.length; i++) {
-      const t = texts[i];
-      if (isMostlyChinese(t)) {
-        translations.push(t);
-        continue;
-      }
-
-      try {
-        const response = await chrome.runtime.sendMessage({
-          action: 'translate',
-          text: t,
-          model,
-          prompt: userPrompt,
-          endpoint
-        });
-        if (response?.translated) {
-          forEachTextNode(element, exclude, (node, idx) => {
-            if (idx === i && node.textContent !== response.translated) {
-              node.textContent = response.translated;
-            }
-          });
-          translations.push(response.translated);
-        } else {
-          translations.push(texts[i]);
-        }
-      } catch (err) {
-        console.error(LOG_PREFIX, 'text node translation failed:', err.message);
-        translations.push(texts[i]);
-      }
+    const toTranslate = textNodes.filter(n => !isMostlyChinese(n.text));
+    if (!toTranslate.length) {
+      console.warn(LOG_PREFIX, 'All text is already Chinese, skip');
+      return;
     }
 
-    translatedElements.set(element, { translations, exclude });
-    ensureGlobalProtector();
+    const combinedText = toTranslate.map(n => n.text).join('\n');
+    console.log(LOG_PREFIX, 'text nodes to translate:', toTranslate.length, 'combined length:', combinedText.length);
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: 'translate',
+        text: combinedText,
+        model,
+        prompt: userPrompt,
+        endpoint
+      });
+
+      const translatedTexts = textNodes.map(n => n.text);
+      if (response?.translated) {
+        const parts = response.translated.split('\n');
+        toTranslate.forEach((item, i) => {
+          if (i < parts.length && parts[i].trim()) {
+            item.node.textContent = parts[i];
+            const idx = textNodes.indexOf(item);
+            if (idx !== -1) translatedTexts[idx] = parts[i];
+          }
+        });
+      }
+
+      translatedElements.set(element, { nodes: textNodes.map(n => n.node), texts: translatedTexts, exclude });
+      ensureGlobalProtector();
+    } catch (err) {
+      console.error(LOG_PREFIX, 'translation failed:', err.message);
+    }
   }
 
   function applyTranslations(element, data) {
     if (!element.isConnected) return;
-    forEachTextNode(element, data.exclude, (node, i) => {
-      if (i < data.translations.length && node.textContent !== data.translations[i]) {
-        node.textContent = data.translations[i];
+    data.nodes.forEach((n, i) => {
+      if (i < data.texts.length && n.textContent !== data.texts[i]) {
+        n.textContent = data.texts[i];
       }
     });
   }
